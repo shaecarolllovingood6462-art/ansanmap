@@ -1,0 +1,1616 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>안산 설화 탐험 마을 - 안산 옛이야기 배움터</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Noto+Sans+KR:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.browser.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            gaegu: ['"Gaegu"', 'cursive'],
+            sans: ['"Noto Sans KR"', 'sans-serif'],
+          },
+          colors: {
+            village: {
+              cream: '#FFFDF0',
+              soil: '#78350F',
+              wood: '#92400E',
+              grass: '#10B981',
+              pond: '#0EA5E9',
+              sunset: '#F97316',
+              fort: '#6366F1'
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background-color: #fefce8;
+      overflow-x: hidden;
+      user-select: none;
+    }
+    .font-story {
+      font-family: 'Gaegu', cursive;
+    }
+    /* Floating animations */
+    @keyframes gentle-bounce {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-8px) rotate(1deg); }
+    }
+    .animate-gentle {
+      animation: gentle-bounce 3.5s ease-in-out infinite;
+    }
+    .animate-float-slow {
+      animation: gentle-bounce 5s ease-in-out infinite;
+    }
+    /* Custom scrollbar for cute look */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #fef3c7;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #f59e0b;
+      border-radius: 9999px;
+    }
+    .bubble-btn {
+      transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .bubble-btn:hover {
+      transform: translateY(-3px) scale(1.03);
+    }
+    .bubble-btn:active {
+      transform: translateY(1px) scale(0.97);
+    }
+    /* Illustrated map parchment background texture */
+    .map-bg {
+      background: radial-gradient(circle at 50% 20%, #fffaea 0%, #fef3c7 60%, #fae8b2 100%);
+      border: 6px solid #eab308;
+      box-shadow: 0 12px 30px rgba(180, 83, 9, 0.15), inset 0 0 40px rgba(245, 158, 11, 0.1);
+    }
+    /* Modal smooth enter */
+    .modal-enter {
+      animation: popIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.92) translateY(16px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+  </style>
+</head>
+<body class="min-h-screen text-stone-800 bg-[#FFFDF5] selection:bg-amber-200">
+
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b-2 border-amber-200 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="goToHome()">
+        <div class="w-11 h-11 bg-amber-400 rounded-2xl flex items-center justify-center text-2xl shadow-inner border-2 border-amber-500">
+          🏡
+        </div>
+        <div>
+          <h1 class="text-xl md:text-2xl font-black font-story text-amber-900 leading-tight">
+            안산 설화 탐험 마을
+          </h1>
+          <p class="text-xs text-amber-700">상상력과 지혜가 자라는 우리 고장 옛이야기</p>
+        </div>
+      </div>
+
+      <div class="flex items-center space-x-2">
+        <button id="soundToggleBtn" onclick="toggleSound()" class="px-3 py-1.5 rounded-full bg-amber-100 hover:bg-amber-200 text-amber-800 text-xs font-bold border border-amber-300 transition-all flex items-center space-x-1">
+          <span id="soundIcon">🔔</span>
+          <span id="soundText">소리 켜기</span>
+        </button>
+        <button onclick="openPassportModal()" class="px-4 py-1.5 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white text-xs md:text-sm font-bold shadow-md bubble-btn flex items-center space-x-1.5">
+          <span>📜</span>
+          <span>내 탐험 여권</span>
+          <span id="passportCountBadge" class="ml-1 bg-emerald-700 text-white text-[11px] px-2 py-0.5 rounded-full">0/3 완료</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6">
+
+    <!-- VIEW 1: Interactive Village Map (Home) -->
+    <section id="villageMapView" class="space-y-6">
+      
+      <!-- Welcome Village Banner -->
+      <div class="relative overflow-hidden bg-gradient-to-r from-amber-200 via-orange-100 to-emerald-100 rounded-3xl p-6 md:p-8 border-4 border-amber-300 shadow-lg text-center">
+        <div class="absolute -right-6 -bottom-6 text-7xl opacity-25">🗺️</div>
+        <div class="absolute -left-4 -top-4 text-6xl opacity-20">🌲</div>
+        <span class="inline-block bg-amber-500 text-white font-bold text-xs uppercase px-3 py-1 rounded-full shadow mb-2">
+          안산(安山) 향토 설화 이야기 지도
+        </span>
+        <h2 class="text-2xl md:text-4xl font-extrabold font-story text-amber-950 mb-2">
+          "마을을 골라 옛 선조들의 신비한 이야기 속으로 떠나볼까요?"
+        </h2>
+        <p class="text-stone-700 text-sm md:text-base max-w-2xl mx-auto">
+          경기도 안산의 수암봉 바람과 서해 바닷길에 깃든 전설을 탐험해 보세요. 
+          이야기를 읽고 <strong>이해 퀴즈</strong>, <strong>사고력 토론</strong>, <strong>창의 문제</strong>를 해결하면 특별한 <strong>마을 스탬프</strong>를 획득할 수 있습니다!
+        </p>
+      </div>
+
+      <!-- Illustrated Village Region Interactive Map -->
+      <div class="map-bg rounded-3xl p-6 md:p-10 relative overflow-hidden">
+        <!-- Floating Deco Elements -->
+        <div class="absolute top-4 left-6 text-2xl animate-float-slow opacity-80">☁️</div>
+        <div class="absolute top-12 right-12 text-3xl animate-gentle opacity-70">🕊️</div>
+        <div class="absolute bottom-6 left-1/4 text-2xl opacity-60">🌾</div>
+        <div class="absolute bottom-8 right-1/3 text-2xl opacity-60">🌊</div>
+
+        <div class="text-center mb-8">
+          <div class="inline-flex items-center space-x-2 bg-amber-50 border border-amber-300 px-4 py-1.5 rounded-full text-amber-900 font-bold text-sm shadow-sm">
+            <span>📍</span>
+            <span>원하는 설화 마을을 톡톡 터치해 입장하세요!</span>
+          </div>
+        </div>
+
+        <!-- 3 Village Village Cards / Pins -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+
+          <!-- Village 1: Palgok-dong (Dragon Well) -->
+          <div onclick="enterVillage('palgok')" class="cursor-pointer group relative bg-white/95 rounded-3xl p-6 border-3 border-sky-300 hover:border-sky-500 shadow-lg hover:shadow-2xl transition-all duration-300 bubble-btn transform">
+            <div class="absolute -top-4 right-4 bg-sky-500 text-white text-xs font-black px-3 py-1 rounded-full shadow">
+              상록구 팔곡동
+            </div>
+            <div class="w-20 h-20 mx-auto mb-4 bg-sky-100 rounded-2xl flex items-center justify-center text-4xl group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-inner border-2 border-sky-200">
+              🐉
+            </div>
+            <h3 class="text-xl font-bold font-story text-sky-950 text-center mb-2">
+              팔곡동 큰 우물 마을
+            </h3>
+            <p class="text-xs text-sky-700 font-medium text-center mb-4 bg-sky-50 py-1.5 px-2 rounded-xl">
+              "승천을 꿈꾸던 이무기의 애틋한 전설"
+            </p>
+            <p class="text-xs text-stone-600 line-clamp-3 leading-relaxed mb-4">
+              맑은 물이 솟아나던 팔곡동 샛골 큰 우물! 천 년을 수련해 용이 되어 승천하려던 이무기에게 과연 어떤 뜻밖의 일이 일어났을까요?
+            </p>
+            <div class="flex items-center justify-between pt-3 border-t border-sky-100">
+              <span id="badge-palgok" class="text-xs font-bold text-stone-600 flex items-center gap-1">
+                <span>미완료</span>
+              </span>
+              <span class="inline-flex items-center text-xs font-bold text-sky-600 group-hover:translate-x-1 transition-transform">
+                마을 입장하기 ➔
+              </span>
+            </div>
+          </div>
+
+          <!-- Village 2: Daebudo (Halmi Rock) -->
+          <div onclick="enterVillage('daebudo')" class="cursor-pointer group relative bg-white/95 rounded-3xl p-6 border-3 border-orange-300 hover:border-orange-500 shadow-lg hover:shadow-2xl transition-all duration-300 bubble-btn transform">
+            <div class="absolute -top-4 right-4 bg-orange-500 text-white text-xs font-black px-3 py-1 rounded-full shadow">
+              단원구 대부도
+            </div>
+            <div class="w-20 h-20 mx-auto mb-4 bg-orange-100 rounded-2xl flex items-center justify-center text-4xl group-hover:scale-110 group-hover:-6deg transition-transform shadow-inner border-2 border-orange-200">
+              🪨
+            </div>
+            <h3 class="text-xl font-bold font-story text-orange-950 text-center mb-2">
+              구봉도 선돌 바위 마을
+            </h3>
+            <p class="text-xs text-orange-700 font-medium text-center mb-4 bg-orange-50 py-1.5 px-2 rounded-xl">
+              "바다로 나간 할아비를 향한 기다림"
+            </p>
+            <p class="text-xs text-stone-600 line-clamp-3 leading-relaxed mb-4">
+              아홉 봉우리 구봉도 바닷가에 우뚝 솟은 두 개의 바위! 험한 바다로 고기잡이를 떠난 할아버지를 기다리던 할머니의 절절한 사랑 이야기.
+            </p>
+            <div class="flex items-center justify-between pt-3 border-t border-orange-100">
+              <span id="badge-daebudo" class="text-xs font-bold text-stone-600 flex items-center gap-1">
+                <span>미완료</span>
+              </span>
+              <span class="inline-flex items-center text-xs font-bold text-orange-600 group-hover:translate-x-1 transition-transform">
+                마을 입장하기 ➔
+              </span>
+            </div>
+          </div>
+
+          <!-- Village 3: Byeolmangseong (Choji-dong Fortress) -->
+          <div onclick="enterVillage('byeolmang')" class="cursor-pointer group relative bg-white/95 rounded-3xl p-6 border-3 border-indigo-300 hover:border-indigo-500 shadow-lg hover:shadow-2xl transition-all duration-300 bubble-btn transform">
+            <div class="absolute -top-4 right-4 bg-indigo-500 text-white text-xs font-black px-3 py-1 rounded-full shadow">
+              단원구 초지동
+            </div>
+            <div class="w-20 h-20 mx-auto mb-4 bg-indigo-100 rounded-2xl flex items-center justify-center text-4xl group-hover:scale-110 group-hover:rotate-6 transition-transform shadow-inner border-2 border-indigo-200">
+              🏯
+            </div>
+            <h3 class="text-xl font-bold font-story text-indigo-950 text-center mb-2">
+              별망성 푸른 보루 마을
+            </h3>
+            <p class="text-xs text-indigo-700 font-medium text-center mb-4 bg-indigo-50 py-1.5 px-2 rounded-xl">
+              "외적을 막아낸 지혜로운 파수꾼들"
+            </p>
+            <p class="text-xs text-stone-600 line-clamp-3 leading-relaxed mb-4">
+              왜구의 침입을 미리 바라보고 지켜내던 남양만 입구의 별망성! 백성들과 군사들이 횃불과 봉수, 하나 된 마음으로 지켜낸 호국의 전설.
+            </p>
+            <div class="flex items-center justify-between pt-3 border-t border-indigo-100">
+              <span id="badge-byeolmang" class="text-xs font-bold text-stone-600 flex items-center gap-1">
+                <span>미완료</span>
+              </span>
+              <span class="inline-flex items-center text-xs font-bold text-indigo-600 group-hover:translate-x-1 transition-transform">
+                마을 입장하기 ➔
+              </span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Village Road Graphic footer -->
+        <div class="mt-10 bg-amber-200/70 rounded-2xl p-4 border border-amber-300 flex flex-col md:flex-row items-center justify-between text-xs text-amber-900 gap-2">
+          <div class="flex items-center space-x-2">
+            <span class="text-lg">💡</span>
+            <span><strong>안산 탐구 Tip:</strong> 세 마을의 탐구 활동을 모두 마치면 나만의 <strong>안산 어린이 설화 탐험가 증서</strong>를 출력/보관할 수 있어요!</span>
+          </div>
+          <button onclick="showQuickAnsanGuide()" class="text-amber-800 underline hover:text-amber-950 font-bold whitespace-nowrap">
+            안산의 역사 지리 미리보기 🔍
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW 2: Story Village Detail & Multi-Activity View -->
+    <section id="villageDetailView" class="hidden space-y-6">
+
+      <!-- Breadcrumb & Village Header -->
+      <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 bg-white p-5 rounded-3xl border-2 border-stone-200 shadow-sm">
+        <div class="flex items-center space-x-3">
+          <button onclick="goToHome()" class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold rounded-xl flex items-center space-x-1 transition-colors">
+            <span>⬅</span>
+            <span>마을 지도로</span>
+          </button>
+          <div id="villageHeaderIcon" class="text-3xl">🐉</div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span id="villageDistrictTag" class="text-[11px] font-bold px-2 py-0.5 rounded-md bg-stone-100 text-stone-700">지역구</span>
+              <h2 id="villageTitle" class="text-2xl font-bold font-story text-stone-900">마을 이름</h2>
+            </div>
+            <p id="villageSubtitle" class="text-xs text-stone-600">마을 부제 설명</p>
+          </div>
+        </div>
+
+        <!-- Tab Switching (Story / Quiz / Creative / Local Insight) -->
+        <div class="flex flex-wrap items-center gap-1.5 p-1.5 bg-stone-100 rounded-2xl w-full md:w-auto">
+          <button onclick="switchTab('story')" id="tab-story" class="tab-btn flex-1 md:flex-none px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-white text-stone-900 shadow-sm">
+            📖 설화 동화책
+          </button>
+          <button onclick="switchTab('quiz')" id="tab-quiz" class="tab-btn flex-1 md:flex-none px-3.5 py-2 rounded-xl text-xs font-bold transition-all text-stone-600 hover:text-stone-900">
+            🧩 내용 이해 퀴즈
+          </button>
+          <button onclick="switchTab('thinking')" id="tab-thinking" class="tab-btn flex-1 md:flex-none px-3.5 py-2 rounded-xl text-xs font-bold transition-all text-stone-600 hover:text-stone-900">
+            💡 생각 & 창의 탐구
+          </button>
+          <button onclick="switchTab('local')" id="tab-local" class="tab-btn flex-1 md:flex-none px-3.5 py-2 rounded-xl text-xs font-bold transition-all text-stone-600 hover:text-stone-900">
+            🗺️ 안산 지역 돋보기
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 1: Interactive Story Reader -->
+      <div id="panel-story" class="bg-white rounded-3xl p-6 md:p-10 border-2 border-stone-200 shadow-md space-y-6">
+        <div class="flex items-center justify-between pb-4 border-b border-stone-100">
+          <span class="text-xs font-bold text-amber-700 bg-amber-50 px-3 py-1 rounded-full border border-amber-200">
+            마을 구전 설화 읽기
+          </span>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs text-stone-500 font-medium">글자 크기:</span>
+            <button onclick="changeFontSize(-1)" class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs flex items-center justify-center">가-</button>
+            <button onclick="changeFontSize(1)" class="w-7 h-7 rounded-lg bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs flex items-center justify-center">가+</button>
+            <button onclick="readAloudScene()" class="px-3 py-1 rounded-lg bg-amber-400 hover:bg-amber-500 text-amber-950 font-bold text-xs flex items-center gap-1">
+              <span>🔊</span>
+              <span>이야기 낭독</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamic Story Content Box -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+          <div class="lg:col-span-4 bg-amber-50/70 p-6 rounded-3xl border-2 border-amber-200 flex flex-col items-center justify-center text-center">
+            <div id="storyIllustrationIcon" class="text-8xl mb-4 animate-gentle">🐉</div>
+            <div id="storySceneTitle" class="text-lg font-bold font-story text-stone-900 mb-1">장면 제목</div>
+            <div id="storySceneCaption" class="text-xs text-stone-600 leading-relaxed">장면 요약 해설</div>
+          </div>
+
+          <div class="lg:col-span-8 space-y-4">
+            <div id="storyTextContainer" class="text-base md:text-lg leading-relaxed text-stone-800 font-normal space-y-4 max-h-[380px] overflow-y-auto pr-3">
+              <!-- Inserted via JS -->
+            </div>
+
+            <!-- Page / Step Navigation for the Story -->
+            <div class="flex items-center justify-between pt-4 border-t border-stone-100">
+              <button id="prevSceneBtn" onclick="navigateStoryScene(-1)" class="px-4 py-2 rounded-xl bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-bold disabled:opacity-40">
+                ◀ 이전 장면
+              </button>
+              <div id="storySceneIndicator" class="text-xs font-bold text-stone-500">
+                1 / 3
+              </div>
+              <button id="nextSceneBtn" onclick="navigateStoryScene(1)" class="px-4 py-2 rounded-xl bg-amber-400 hover:bg-amber-500 text-amber-950 text-xs font-bold bubble-btn">
+                다음 장면 ▶
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Next to Quiz Banner -->
+        <div class="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-2xl p-4 flex items-center justify-between">
+          <div class="flex items-center space-x-3">
+            <span class="text-2xl">💡</span>
+            <div>
+              <div class="text-sm font-bold text-emerald-900">이야기를 다 읽으셨나요?</div>
+              <div class="text-xs text-emerald-700">퀴즈와 창의 문제에 도전하여 마을의 탐험 징표를 완성하세요!</div>
+            </div>
+          </div>
+          <button onclick="switchTab('quiz')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow bubble-btn">
+            문제 풀러 가기 ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 2: Reading Comprehension Quiz -->
+      <div id="panel-quiz" class="hidden bg-white rounded-3xl p-6 md:p-10 border-2 border-stone-200 shadow-md space-y-6">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-stone-100 gap-3">
+          <div>
+            <h3 class="text-xl font-bold font-story text-stone-900">민담 내용 이해력 퀴즈 🎯</h3>
+            <p class="text-xs text-stone-600">이야기 속 핵심 사건과 안산의 배경 지식을 바르게 이해했는지 확인해 보세요.</p>
+          </div>
+          <div class="flex items-center space-x-2 self-start sm:self-auto">
+            <button onclick="resetCurrentVillageQuizzes()" class="px-3 py-1.5 bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-bold rounded-xl border border-amber-300 bubble-btn transition-colors flex items-center gap-1 shadow-sm">
+              <span>🔄</span>
+              <span>퀴즈 다시 풀기</span>
+            </button>
+            <div id="quizScoreBadge" class="bg-amber-500 text-white text-xs font-black px-3.5 py-1.5 rounded-full shadow-sm">
+              정답 0 / 4
+            </div>
+          </div>
+        </div>
+
+        <div id="quizQuestionsList" class="space-y-6">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <div id="quizCompletionBanner" class="hidden p-4 rounded-2xl bg-emerald-100 border border-emerald-300 text-emerald-950 text-sm flex items-center justify-between">
+          <div class="flex items-center space-x-2">
+            <span class="text-2xl">🎉</span>
+            <span class="font-bold">멋져요! 마을의 모든 퀴즈를 성공적으로 해결했습니다!</span>
+          </div>
+          <button onclick="switchTab('thinking')" class="px-3 py-1.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold bubble-btn">
+            사고력 미션 풀기 ➔
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 3: Critical & Creative Thinking Activities -->
+      <div id="panel-thinking" class="hidden bg-white rounded-3xl p-6 md:p-10 border-2 border-stone-200 shadow-md space-y-8">
+        <div>
+          <span class="text-xs font-bold text-indigo-700 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
+            생각 쑥쑥 & 상상력 공방
+          </span>
+          <h3 class="text-2xl font-bold font-story text-stone-900 mt-2">
+            민담 재해석 & 창의 문제 해결소
+          </h3>
+          <p class="text-xs md:text-sm text-stone-600 mt-1">
+            "옛날이야기 속 인물의 마음을 헤아려보고, 현대 안산의 관점에서 새로운 생각과 결말을 열어보세요!"
+          </p>
+        </div>
+
+        <!-- Dynamic Thinking Questions based on selected village -->
+        <div id="thinkingTasksContainer" class="space-y-6">
+          <!-- Populated dynamically -->
+        </div>
+
+        <!-- Creative Workshop: Interactive Drawing / Writing Canvas -->
+        <div class="bg-amber-50/50 rounded-2xl p-5 border border-amber-200 space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-sm font-bold text-amber-950 flex items-center gap-1.5">
+              <span>🎨</span>
+              <span id="canvasTaskTitle">내 손으로 그리는 설화 상징 스케치</span>
+            </span>
+            <div class="flex items-center space-x-2">
+              <button onclick="clearCreativeCanvas()" class="px-2.5 py-1 text-xs bg-stone-200 hover:bg-stone-300 rounded-lg text-stone-700 font-bold">
+                지우기
+              </button>
+              <div class="flex gap-1">
+                <button onclick="setBrushColor('#000000')" class="w-5 h-5 rounded-full bg-black border border-white shadow"></button>
+                <button onclick="setBrushColor('#0284c7')" class="w-5 h-5 rounded-full bg-sky-600 border border-white shadow"></button>
+                <button onclick="setBrushColor('#ea580c')" class="w-5 h-5 rounded-full bg-orange-600 border border-white shadow"></button>
+                <button onclick="setBrushColor('#16a34a')" class="w-5 h-5 rounded-full bg-green-600 border border-white shadow"></button>
+              </div>
+            </div>
+          </div>
+          <div class="relative bg-white rounded-xl border-2 border-dashed border-amber-300 overflow-hidden touch-none" style="height: 180px;">
+            <canvas id="creativeCanvas" class="w-full h-full cursor-crosshair"></canvas>
+            <div id="canvasPlaceholder" class="absolute inset-0 flex items-center justify-center pointer-events-none text-stone-400 text-xs">
+              이곳에 터치하거나 마우스로 자유롭게 상상한 모습을 그려보세요!
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end">
+          <button onclick="submitThinkingMission()" class="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-2xl shadow-lg bubble-btn flex items-center space-x-2">
+            <span>✍️</span>
+            <span>창의 탐구 답안 저장하고 도장 받기</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- TAB 4: Ansan Local Cultural & Geographical Insight -->
+      <div id="panel-local" class="hidden bg-white rounded-3xl p-6 md:p-10 border-2 border-stone-200 shadow-md space-y-6">
+        <div>
+          <span class="text-xs font-bold text-teal-700 bg-teal-50 px-3 py-1 rounded-full border border-teal-200">
+            우리고장 안산 탐구 돋보기
+          </span>
+          <h3 id="localInfoTitle" class="text-2xl font-bold font-story text-stone-900 mt-2">
+            안산의 실제 지리 및 역사 들여다보기
+          </h3>
+          <p class="text-xs text-stone-600">
+            설화의 배경이 된 안산의 실제 장소와 오늘날 시민들이 찾는 문화유산을 확인해 보세요.
+          </p>
+        </div>
+
+        <div id="localInsightContent" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="bg-amber-100/70 rounded-2xl p-5 border border-amber-300 flex items-center justify-between">
+          <div class="space-y-1">
+            <h4 class="text-sm font-bold text-amber-950">가족이나 친구와 함께 가보는 '안산 역사 답사' 꿀팁!</h4>
+            <p id="localTravelTip" class="text-xs text-amber-800 leading-relaxed">
+              답사 팁 내용
+            </p>
+          </div>
+          <button onclick="shareVillageReport()" class="ml-4 px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl whitespace-nowrap bubble-btn shadow">
+            탐구 내용 복사 📋
+          </button>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- PASSPORT / CERTIFICATE MODAL -->
+  <div id="passportModal" class="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 md:p-8 border-4 border-amber-400 shadow-2xl relative modal-enter">
+      <button onclick="closePassportModal()" class="absolute top-4 right-4 text-stone-400 hover:text-stone-700 text-xl font-black w-8 h-8 rounded-full bg-stone-100 flex items-center justify-center">
+        ✕
+      </button>
+
+      <div class="text-center space-y-2 mb-6">
+        <span class="text-4xl">📜</span>
+        <h3 class="text-2xl font-black font-story text-amber-950">나의 안산 설화 탐험 여권</h3>
+        <p class="text-xs text-stone-600">세 마을의 모든 퀴즈와 창의 탐구를 완료하여 완주 뱃지를 수집하세요!</p>
+      </div>
+
+      <!-- Stamps Collection Board -->
+      <div class="grid grid-cols-3 gap-3 bg-amber-50 p-4 rounded-2xl border border-amber-200 mb-6 text-center">
+        <div id="stampBox-palgok" class="p-3 bg-white rounded-xl border border-dashed border-stone-300 flex flex-col items-center">
+          <div class="text-3xl opacity-30 mb-1" id="stampIcon-palgok">🐉</div>
+          <span class="text-[11px] font-bold text-stone-700">팔곡동 우물</span>
+          <span class="text-[10px] text-stone-600 mt-1" id="stampStatus-palgok">미완료</span>
+        </div>
+        <div id="stampBox-daebudo" class="p-3 bg-white rounded-xl border border-dashed border-stone-300 flex flex-col items-center">
+          <div class="text-3xl opacity-30 mb-1" id="stampIcon-daebudo">🪨</div>
+          <span class="text-[11px] font-bold text-stone-700">구봉도 선돌</span>
+          <span class="text-[10px] text-stone-600 mt-1" id="stampStatus-daebudo">미완료</span>
+        </div>
+        <div id="stampBox-byeolmang" class="p-3 bg-white rounded-xl border border-dashed border-stone-300 flex flex-col items-center">
+          <div class="text-3xl opacity-30 mb-1" id="stampIcon-byeolmang">🏯</div>
+          <span class="text-[11px] font-bold text-stone-700">별망성 보루</span>
+          <span class="text-[10px] text-stone-600 mt-1" id="stampStatus-byeolmang">미완료</span>
+        </div>
+      </div>
+
+      <!-- Explorer Certificate Preview Box -->
+      <div id="certificateContainer" class="bg-gradient-to-b from-amber-50 via-white to-amber-50 p-4 rounded-2xl border-2 border-amber-300 text-center space-y-2">
+        <span class="text-xs font-bold text-amber-800 bg-amber-200/70 px-2.5 py-0.5 rounded-full">명예 안산 어린이 탐험가</span>
+        <div class="text-lg font-bold font-story text-stone-900" id="certUserName">우리 고장 설화 지킴이</div>
+        <p class="text-xs text-stone-600" id="certDesc">
+          안산의 소중한 구전 설화를 바르게 탐구하고, 깊은 사고력과 창의적인 생각으로 탐험 과정을 훌륭하게 수행하고 있습니다.
+        </p>
+      </div>
+
+      <div class="mt-6 flex gap-2">
+        <button onclick="generatePrintableSummary()" class="flex-1 py-3 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs md:text-sm rounded-xl bubble-btn shadow flex items-center justify-center gap-1.5">
+          <span>🖨️</span>
+          <span>내 탐험 기록 복사하기</span>
+        </button>
+        <button onclick="closePassportModal()" class="px-5 py-3 bg-stone-100 hover:bg-stone-200 text-stone-700 font-bold text-xs md:text-sm rounded-xl">
+          닫기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CUSTOM FRIENDLY MESSAGE TOAST / MODAL -->
+  <div id="messageToast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 bg-stone-900/90 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center space-x-3 text-sm transition-all duration-300 opacity-0 pointer-events-none transform translate-y-4">
+    <span id="toastIcon">✨</span>
+    <span id="toastMessage">안내 메시지입니다.</span>
+  </div>
+
+  <!-- QUICK ANSAN HISTORICAL GUIDE MODAL -->
+  <div id="quickGuideModal" class="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full p-6 border-3 border-amber-300 shadow-xl modal-enter space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between pb-3 border-b border-stone-200">
+        <h3 class="text-xl font-bold font-story text-stone-900 flex items-center gap-2">
+          <span>🌿</span> 안산시의 자연과 역사 이야기
+        </h3>
+        <button onclick="closeQuickGuideModal()" class="text-stone-400 hover:text-stone-700 font-black text-lg">✕</button>
+      </div>
+      <div class="text-xs md:text-sm text-stone-700 space-y-3 leading-relaxed">
+        <p>
+          <strong>‘안산(安山)’</strong>이라는 지명은 ‘편안할 안(安)’에 ‘뫼 산(山)’ 자를 써서 <em>‘편안한 산과 들, 바다가 조화를 이루는 고장’</em>이라는 아름다운 의미를 품고 있습니다.
+        </p>
+        <div class="bg-amber-50 p-3 rounded-xl border border-amber-200">
+          <h5 class="font-bold text-amber-900 mb-1">📍 동쪽의 내륙 (상록구)</h5>
+          <p>수암봉과 광덕산이 자리하여 맑은 샘과 비옥한 농경지가 발달했고, 큰 우물과 용·이무기에 얽힌 풍요와 승천 설화가 많이 전해집니다.</p>
+        </div>
+        <div class="bg-sky-50 p-3 rounded-xl border border-sky-200">
+          <h5 class="font-bold text-sky-900 mb-1">🌊 서쪽의 바다 (단원구 & 대부도)</h5>
+          <p>서해 갯벌과 섬(대부도, 풍도 등), 해안 방어 거점(별망성)이 있어 어업 활동의 무사 귀환을 기원하는 전설과 바다를 지킨 백성들의 호국 설화가 전승되고 있습니다.</p>
+        </div>
+      </div>
+      <button onclick="closeQuickGuideModal()" class="w-full py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs rounded-xl bubble-btn">
+        확인하고 탐험 계속하기
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Sound & Tone.js synthesis setup
+    let isSoundOn = false;
+    let synth = null;
+
+    function fireConfetti(opts = {}) {
+      try {
+        if (typeof window !== 'undefined' && typeof window.confetti === 'function') {
+          window.confetti(opts);
+          return;
+        } else if (typeof confetti === 'function') {
+          confetti(opts);
+          return;
+        }
+      } catch (e) {
+        // Fallback below
+      }
+
+      // Safe DOM/CSS particle explosion fallback if external CDN is blocked
+      try {
+        const count = opts.particleCount || 30;
+        const colors = ['#f59e0b', '#10b981', '#0ea5e9', '#ec4899', '#8b5cf6'];
+        const startY = (opts.origin && opts.origin.y ? opts.origin.y * 100 : 70);
+        
+        for (let i = 0; i < count; i++) {
+          const p = document.createElement('div');
+          p.className = 'fixed z-50 pointer-events-none rounded-full';
+          const size = Math.random() * 8 + 6;
+          p.style.width = `${size}px`;
+          p.style.height = `${size}px`;
+          p.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+          p.style.left = `${Math.random() * 80 + 10}vw`;
+          p.style.top = `${startY}vh`;
+          p.style.transition = 'all 1s cubic-bezier(0.25, 1, 0.5, 1)';
+          p.style.opacity = '1';
+          document.body.appendChild(p);
+
+          const dx = (Math.random() - 0.5) * 220;
+          const dy = -(Math.random() * 180 + 70);
+          requestAnimationFrame(() => {
+            p.style.transform = `translate(${dx}px, ${dy}px) rotate(${Math.random() * 360}deg)`;
+            p.style.opacity = '0';
+          });
+
+          setTimeout(() => p.remove(), 1100);
+        }
+      } catch (err) {}
+    }
+
+    function initAudio() {
+      if (!synth && window.Tone) {
+        try {
+          synth = new Tone.PolySynth(Tone.Synth, {
+            oscillator: { type: "triangle" },
+            envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.8 }
+          }).toDestination();
+          synth.volume.value = -8;
+        } catch(e) {
+          console.warn("Audio init deferred", e);
+        }
+      }
+    }
+
+    function playNote(note = "C5", dur = "8n") {
+      if (!isSoundOn || !synth) return;
+      try {
+        if (Tone.context.state !== 'running') {
+          Tone.start();
+        }
+        synth.triggerAttackRelease(note, dur);
+      } catch(e) {}
+    }
+
+    function playSuccessChime() {
+      if (!isSoundOn || !synth) return;
+      try {
+        const now = Tone.now();
+        synth.triggerAttackRelease("E5", "16n", now);
+        synth.triggerAttackRelease("G5", "16n", now + 0.1);
+        synth.triggerAttackRelease("C6", "8n", now + 0.2);
+      } catch(e) {}
+    }
+
+    function toggleSound() {
+      initAudio();
+      isSoundOn = !isSoundOn;
+      const soundIcon = document.getElementById("soundIcon");
+      const soundText = document.getElementById("soundText");
+      if (isSoundOn) {
+        if (window.Tone && Tone.context.state !== 'running') {
+          Tone.start();
+        }
+        soundIcon.innerText = "🔊";
+        soundText.innerText = "소리 켬";
+        showToast("배경 효과음이 켜졌습니다! 🎶");
+        playSuccessChime();
+      } else {
+        soundIcon.innerText = "🔇";
+        soundText.innerText = "소리 끔";
+        showToast("효과음이 꺼졌습니다.");
+      }
+    }
+
+    /* 3 Primary Ansan Folk Tales Database */
+    const VILLAGE_DATA = {
+      palgok: {
+        id: 'palgok',
+        name: '팔곡동 큰 우물 마을',
+        district: '상록구 팔곡동',
+        theme: '용과 이무기의 꿈',
+        icon: '🐉',
+        color: 'sky',
+        storyTitle: '팔곡동 큰 우물과 승천하지 못한 이무기',
+        subtitle: '맑은 물이 퐁퐁 솟아나던 샛골 큰 우물의 신비로운 비밀',
+        scenes: [
+          {
+            sceneNum: 1,
+            title: '1장: 가뭄에도 마르지 않는 신비한 큰 우물',
+            caption: '팔곡동 마을 사람들이 생명수처럼 아끼던 샛골 큰 우물 이야기',
+            icon: '💧',
+            paragraphs: [
+              "옛날 경기도 안산 팔곡동 샛골 마을에는 아무리 심한 가뭄이 들어도 마르지 않는 깊고 맑은 큰 우물이 있었습니다.",
+              "마을 사람들은 매일 아침 일찍 우물물을 길어 밥을 짓고 농사일을 준비했습니다. 우물물은 한겨울에도 얼지 않고 따뜻한 김이 모락모락 피어올랐으며, 한여름에는 살얼음처럼 시원해 온 마을의 큰 자랑거리였습니다.",
+              "그런데 사람들은 잘 몰랐지만, 이 깊고 깊은 우물 밑바닥에는 하늘로 올라가 용이 되기 위해 천 년 동안 조용히 도를 닦고 있던 착한 이무기가 살고 있었습니다."
+            ]
+          },
+          {
+            sceneNum: 2,
+            title: '2장: 천 년의 수련과 천둥 치는 날의 승천',
+            caption: '어둠 속에서 먹구름을 부르며 하늘로 솟구치려는 찰나',
+            icon: '⛈️',
+            paragraphs: [
+              "마침내 천 년이 채워지던 어느 여름날 밤, 하늘에서 먹구름이 빽빽하게 몰려오고 우르릉 쾅쾅 천둥 번개가 치기 시작했습니다. 바로 이무기가 용으로 승천할 약속된 시각이 다가온 것입니다.",
+              "이무기는 사람들의 눈에 띄지 않는 깊은 밤을 틈타 승천해야만 온전한 용이 될 수 있었습니다. 거센 비바람과 함께 큰 우물의 물이 거세게 소용돌이치더니, 웅장한 비늘을 반짝이며 이무기가 하늘로 솟아오르기 시작했습니다.",
+              "용이 되어 안산 땅에 평화로운 단비를 내려주겠다는 벅찬 꿈을 안고, 이무기의 몸은 서서히 구름 속으로 빨려 들어가는 듯했습니다."
+            ]
+          },
+          {
+            sceneNum: 3,
+            title: '3장: 예기치 못한 마주침과 샛골의 수호령',
+            caption: '새벽 우물가에서 울려 퍼진 비명, 그리고 이무기의 선택',
+            icon: '🌈',
+            paragraphs: [
+              "그런데 하필 그 시각, 집안의 아픈 가족을 위해 정성스레 물을 뜨러 나온 한 마을 여인이 우물가로 다가왔습니다. 여인은 하늘로 솟구치는 거대한 용의 그림자를 보고 깜짝 놀라 그만 큰 비명을 지르고 말았습니다.",
+              "‘사람에게 승천하는 모습을 들키면 용이 되지 못한다’는 옛 전설의 규칙 때문에, 하늘 문 바로 앞에서 이무기는 힘을 잃고 큰 우물 속으로 다시 곤두박질치고 말았습니다.",
+              "비록 용이 되어 구름을 타진 못했지만, 이무기는 자신을 목격한 여인을 원망하지 않았습니다. 대신 자신이 사랑한 안산 팔곡동의 땅속에 남아 영원히 마르지 않는 맑은 샘물이 솟아나도록 지켜주는 온화한 수호령이 되었답니다."
+            ]
+          }
+        ],
+        quizzes: [
+          {
+            id: 'q1',
+            question: '이무기가 살고 있던 안산 팔곡동 샛골 우물의 특별한 점은 무엇이었나요?',
+            options: [
+              '바닷물이 흘러들어 짠맛이 났다.',
+              '가뭄에도 마르지 않고 겨울엔 따뜻하고 여름엔 시원했다.',
+              '금가루가 섞여 나와 온 마을이 부자가 되었다.',
+              '우물 물이 매일 빨간색과 파란색으로 변했다.'
+            ],
+            answerIndex: 1,
+            explanation: '팔곡동 큰 우물은 사계절 마르지 않는 생명수로, 백성들의 생활과 농사의 중심 터전이었습니다.'
+          },
+          {
+            id: 'q2',
+            question: '이무기가 하늘로 온전히 승천하여 용이 되지 못한 까닭은 무엇인가요?',
+            options: [
+              '비가 오지 않고 날씨가 너무 맑아서',
+              '여의주를 바다에 떨어뜨려서',
+              '새벽에 물을 뜨러 온 마을 사람에게 모습을 들켜서',
+              '다른 이무기와 다투다가 늦잠을 자서'
+            ],
+            answerIndex: 2,
+            explanation: '한국 구전 설화에는 용이 승천할 때 인간의 시선에 닿으면 부정을 타거나 조건이 깨져 다시 내려앉는 신화적 모티프가 널리 반영되어 있습니다.'
+          },
+          {
+            id: 'q3',
+            question: '‘팔곡동(八谷洞)’이라는 지명에 담긴 유래는 무엇일까요?',
+            options: [
+              '여덟 명의 장수가 태어난 마을이라서',
+              '산골짜기가 여덟 갈래로 나뉘어 물길이 풍부한 마을이라서',
+              '여덟 가지의 곡식(쌀, 보리, 콩 등)만 재배하던 마을이라서',
+              '팔월 한가위에만 사람들이 모이던 마을이라서'
+            ],
+            answerIndex: 1,
+            explanation: '팔곡동(八谷洞)은 수암봉 맥을 잇는 산골짜기가 여덟 갈래(八谷)로 뻗어 내려와 수량이 풍부하고 농토가 기름진 데서 유래했습니다.'
+          },
+          {
+            id: 'q4',
+            question: '승천하지 못했음에도 사람을 해치지 않고 마을의 수호령이 된 이무기 이야기에서 배울 수 있는 선조들의 생각은 무엇일까요?',
+            options: [
+              '실패한 존재는 무조건 마을 밖으로 쫓아내야 한다는 생각',
+              '물이 귀한 농경사회에서 우물과 자연을 감사히 여기고 소중히 보호하려는 마음',
+              '우물 속에 괴물이 살고 있으니 밤에는 물을 마시지 말라는 미신',
+              '가뭄이 들면 비가 올 때까지 기우제만 지내야 한다는 믿음'
+            ],
+            answerIndex: 1,
+            explanation: '이 설화는 물이 생명줄이었던 옛 안산 선조들이 우물과 샘물을 신성시하고 생태계를 존중했던 따뜻한 자연관을 담고 있습니다.'
+          }
+        ],
+        thinkingMissions: [
+          {
+            id: 't1',
+            type: 'short',
+            label: '💡 인물 공감 토론',
+            prompt: '승천에 실패했음에도 마을 사람들을 해치지 않고 샘물을 지켜준 이무기의 마음통은 어떠했을까요? 만약 나라면 어떤 선택을 했을지 적어보세요.',
+            placeholder: '이무기는 천 년의 수력이 아쉬웠겠지만, 팔곡동 사람들의 고단한 삶을 위로하기 위해...'
+          },
+          {
+            id: 't2',
+            type: 'creative',
+            label: '🎨 창의적 결말 재구성 (사고력)',
+            prompt: '‘현대 안산 팔곡동’에 이무기가 다시 용으로 승천할 두 번째 기회가 온다면, 마을 주민들과 지자체는 이무기를 돕기 위해 어떤 지혜로운 배려(축제, 정숙 캠페인 등)를 펼칠 수 있을까요?',
+            placeholder: '안산 주민들이 함께 소음을 줄이는 ‘별빛 승천의 밤’을 열어 이무기가 편안하게 올라갈 수 있도록...'
+          }
+        ],
+        canvasPrompt: '팔곡동 큰 우물 속에서 은은한 빛을 뿜는 이무기나 여의주를 그려보세요!',
+        localInsight: {
+          title: '상록구 팔곡동과 반월천의 풍요로운 물길',
+          history: '팔곡동(八谷洞)은 본래 산골짜기가 여덟 갈래로 나뉘어 있어 붙여진 이름으로 전해집니다. 수암봉 줄기에서 흘러내려 반월천으로 이어지는 수자원이 풍부하여 예로부터 논농사가 번창하였고 곳곳에 깊은 우물과 샘터가 조성되었습니다.',
+          modern: '오늘날 팔곡동은 시흥·수원 방면과 연결되는 교통 요지이자 쾌적한 주거 공간으로 발전했습니다. 옛 우물터 전설은 물을 아끼고 자연을 존중했던 안산 선조들의 환경관을 잘 보여줍니다.',
+          travelTip: '상록구 팔곡동 인근의 반월천 산책로를 걸으며 옛 농경지 물길의 흔적을 살펴보고, 우리 집 주변 수돗물과 샘터의 고마움을 함께 이야기해 보세요.'
+        }
+      },
+
+      daebudo: {
+        id: 'daebudo',
+        name: '구봉도 선돌 바위 마을',
+        district: '단원구 대부도',
+        theme: '가족애와 굳건한 기다림',
+        icon: '🪨',
+        color: 'orange',
+        storyTitle: '구봉도 할미·할아비 바위와 애틋한 기다림',
+        subtitle: '아홉 개의 봉우리 끝자락, 서해 붉은 낙조를 품은 바위의 사연',
+        scenes: [
+          {
+            sceneNum: 1,
+            title: '1장: 아홉 봉우리 구봉도의 다정한 노부부',
+            caption: '바다를 일구며 서로를 극진히 아끼던 대부도 어촌마을',
+            icon: '🌊',
+            paragraphs: [
+              "경기도 안산시 단원구의 서쪽 끝, 푸른 서해 바다가 시원하게 펼쳐진 대부도에는 아홉 개의 아름다운 산봉우리가 솟아 있어 ‘구봉도(九峰島)’라 불리는 곳이 있습니다.",
+              "먼 옛날 이곳 바닷가 작은 오두막에는 평생을 서로 기대어 아끼며 살아가는 착한 할머니와 할아버지가 살고 있었습니다.",
+              "두 사람은 갯벌에서 바지락을 캐고 작은 배로 물고기를 낚으며 소박하지만 정답게 하루하루를 보냈습니다. 마을 사람들도 금실 좋은 노부부를 보며 언제나 마음이 따뜻해졌습니다."
+            ]
+          },
+          {
+            sceneNum: 2,
+            title: '2장: 거친 풍랑과 지아비를 향한 밤낮 없는 기다림',
+            caption: '먼바다로 나간 지아비의 배가 돌아오지 않자 바닷가에 선 할머니',
+            icon: '⛵',
+            paragraphs: [
+              "어느 늦가을, 할아버지는 겨울 양식을 마련하기 위해 먼바다로 며칠 동안 고기잡이를 떠났습니다. 그런데 그날 밤 서해에 걷잡을 수 없는 거센 풍랑과 거센 비바람이 몰아닥쳤습니다.",
+              "날이 밝아도 할아버지의 돛단배는 돌아오지 않았습니다. 할머니는 뜬눈으로 밤을 지새우며 구봉도 높은 언덕 바위에 올라 바다 저 멀리를 하염없이 바라보았습니다.",
+              "눈이 오나 비가 오나 할머니는 한자리에서 지아비의 이름을 부르며 무사 귀환만을 간절히 하늘에 빌고 또 빌었습니다. 하지만 세월이 흘러도 소식은 들리지 않았고, 할머니는 결국 바다를 바라보는 굳건한 ‘망부석(할미바위)’이 되고 말았습니다."
+            ]
+          },
+          {
+            sceneNum: 3,
+            title: '3장: 기적의 귀환과 영원히 함께 선 두 바위',
+            caption: '살아 돌아온 할아버지의 눈물, 그리고 서해의 수호석이 된 선돌',
+            icon: '🌅',
+            paragraphs: [
+              "그러던 어느 날, 난파된 배에서 기적적으로 살아남은 할아버지가 온갖 역경을 딛고 천신만고 끝에 그리운 고향 구봉도로 돌아왔습니다.",
+              "할아버지는 아내를 부르며 집으로 달려왔지만 집은 비어 있었고, 바닷가 언덕 위에 자신을 애타게 기다리다 바위로 변해버린 할머니를 마주하게 되었습니다.",
+              "할아버지는 할미바위를 부둥켜안고 목 놓아 통곡하다가, ‘다시는 당신을 홀로 외롭게 두지 않겠다’며 그 곁에 나란히 우뚝 서서 자신 또한 큰 바위(할아비바위)가 되었습니다. 사람들은 이 두 바위를 ‘구봉이 선돌’이라 부르며, 험한 서해를 오가는 배들을 안전하게 지켜주는 등대 같은 사랑의 징표로 기리고 있습니다."
+            ]
+          }
+        ],
+        quizzes: [
+          {
+            id: 'q1',
+            question: '구봉도(九峰島)라는 지명에 담긴 유래는 무엇일까요?',
+            options: [
+              '아홉 마리의 거북이가 알을 낳아서',
+              '아홉 개의 산봉우리가 봉긋 솟아 있어서',
+              '바다에 아홉 개의 등대가 있어서',
+              '구백 명의 어부가 살던 큰 마을이어서'
+            ],
+            answerIndex: 1,
+            explanation: '구봉도는 아홉 개의 산봉우리가 길게 이어져 바다로 뻗어 나간 형상에서 유래한 안산 대부도의 명승지입니다.'
+          },
+          {
+            id: 'q2',
+            question: '구봉이 선돌(할미·할아비 바위) 설화가 오늘날 우리에게 주는 가장 큰 교훈은 무엇일까요?',
+            options: [
+              '혼자서 바다에 나가면 절대 안 된다는 경고',
+              '서로를 진심으로 아끼는 숭고한 가족애와 헌신적인 사랑',
+              '바위가 있는 곳에는 보물이 묻혀 있다는 전설',
+              '비가 오는 날에는 무조건 집안에 머물러야 한다는 규칙'
+            ],
+            answerIndex: 1,
+            explanation: '어려운 바닷일 속에서도 서로를 끝까지 믿고 기다려 준 노부부의 사랑은 오늘날에도 따뜻한 가족의 소중함을 일깨워 줍니다.'
+          },
+          {
+            id: 'q3',
+            question: '구봉도 선돌 바위는 서해 바다의 어떤 자연 현상 덕분에 썰물 때 걸어서 직접 가까이 가볼 수 있을까요?',
+            options: [
+              '서해안의 밀물과 썰물(조수간만의 차) 현상',
+              '바다가 얼어붙는 한겨울 빙하 현상',
+              '하루 종일 물이 차지 않는 사막 기후',
+              '대형 댐이 바닷물을 모두 가두어 놓아서'
+            ],
+            answerIndex: 0,
+            explanation: '서해안은 조수간만의 차가 커서, 물이 빠지는 썰물(간조) 시간이 되면 바닷길이 열려 선돌 바위 바로 밑까지 걸어갈 수 있습니다.'
+          },
+          {
+            id: 'q4',
+            question: '오늘날 구봉도 선돌 바위와 함께 안산 9경으로 꼽히며, 아름다운 서해 일몰을 감상할 수 있는 명소는 어디일까요?',
+            options: [
+              '구봉도 낙조전망대와 대부해솔길',
+              '안산 얼음 썰매장',
+              '지하 암반 동굴 광산',
+              '수원화성 장안문'
+            ],
+            answerIndex: 0,
+            explanation: '구봉도 선돌 바위 길을 따라 걸으면 ‘대부해솔길 1코스’와 ‘구봉도 낙조전망대’가 나오며 서해 낙조의 환상적인 장관을 만날 수 있습니다.'
+          }
+        ],
+        thinkingMissions: [
+          {
+            id: 't1',
+            type: 'short',
+            label: '💌 마음 잇기 편지',
+            prompt: '풍랑 속에서도 포기하지 않고 집으로 돌아온 할아버지, 혹은 언덕에서 한결같이 남편을 기다린 할머니에게 보내는 따뜻한 응원의 편지글을 한 문단 써보세요.',
+            placeholder: '할머니, 할아버지! 두 분의 깊은 사랑은 오늘날 안산의 붉은 노을 속에서 영원히 반짝이고 있어요...'
+          },
+          {
+            id: 't2',
+            type: 'creative',
+            label: '⚓ 현대 해양 안전 디자인 (창의력)',
+            prompt: '오늘날 대부도 앞바다를 오가는 어선과 해양 레저객들이 안타까운 사고를 겪지 않도록, 두 바위의 설화를 모티브로 한 ‘스마트 해양 안전 등대 조형물’을 구상해 보세요. 어떤 첨단 기능이 있을까요?',
+            placeholder: '안개가 짙게 끼면 할미·할아비 바위의 빛이 어선들에게 소리와 홀로그램 빛으로 뱃길을 알려주는...'
+          }
+        ],
+        canvasPrompt: '대부도 구봉도의 할미·할아비 바위와 서해의 붉은 낙조 태양을 그려보세요!',
+        localInsight: {
+          title: '단원구 대부도와 구봉도 해솔길의 자연 생태',
+          history: '대부도(大阜島)는 ‘서해안의 큰 언덕’이라는 뜻으로, 고려와 조선 시대부터 경기만의 군사·해상 교역 요충지였습니다. 갯벌과 바다가 드넓게 어우러져 천혜의 해양 생태계를 이룹니다.',
+          modern: '현재 구봉도는 ‘대부해솔길 1코스’의 백미로 손꼽히며, 개미허리 아치교와 낙조전망대에서 바라보는 일몰은 ‘안산 9경(안산 대표 관광명소)’ 중 하나로 수많은 시민들에게 사랑받고 있습니다.',
+          travelTip: '썰물(간조) 시간에 맞추어 방문하면 구봉이 선돌 바로 앞까지 걸어가 바위의 웅장함을 직접 눈으로 관찰할 수 있답니다.'
+        }
+      },
+
+      byeolmang: {
+        id: 'byeolmang',
+        name: '별망성 푸른 보루 마을',
+        district: '단원구 초지동',
+        theme: '애국과 호국의 지혜',
+        icon: '🏯',
+        color: 'indigo',
+        storyTitle: '별망성과 바다를 지킨 의로운 파수꾼들',
+        subtitle: '바다의 침입을 한눈에 살피며 나라를 지켜낸 백성들의 호국 요새',
+        scenes: [
+          {
+            sceneNum: 1,
+            title: '1장: 왜구의 길목, 바다를 바라보는 특별한 망루',
+            caption: '남양만과 시화호 갯벌로 이어지는 서해 바닷길의 방어선',
+            icon: '🛡️',
+            paragraphs: [
+              "조선 초기, 안산의 초지동 바닷가는 한양 도성으로 들어가는 바닷길목이자 물자가 오가는 매우 중요한 길목이었습니다. 하지만 그만큼 바다 건너 왜구들이 자주 쳐들어와 백성들의 곡식을 훔치고 마을을 어지럽혔습니다.",
+              "이에 나라와 안산 사람들은 바다가 훤히 내려다보이는 해발 49m의 야트막한 언덕에 돌을 하나하나 정성껏 쌓아 성을 지었습니다. 이 성이 바로 ‘바다 멀리 특별히 적을 감시하고 망을 본다’ 하여 이름 붙은 ‘별망성(別望城)’입니다.",
+              "성곽의 둘레는 비록 크지 않았지만, 산등성이를 따라 바다 쪽으로 튼튼하게 석축을 쌓아 적으로부터 안산 백성들의 보금자리를 지키는 단단한 방패가 되었습니다."
+            ]
+          },
+          {
+            sceneNum: 2,
+            title: '2장: 봉홧불과 징 소리로 하나 된 파수꾼들',
+            caption: '적의 침략을 가장 먼저 발견하고 서로에게 알린 지혜',
+            icon: '🔥',
+            paragraphs: [
+              "별망성의 파수꾼들은 밤낮을 가리지 않고 험한 바닷바람 속에서 눈을 부릅뜨고 수평선을 감시했습니다.",
+              "어느 날 짙은 안개를 틈타 수십 척의 왜선이 은밀하게 침입해 들어왔습니다. 적들은 자신들의 기습이 성공할 것이라 믿었지만, 별망성의 지혜로운 파수꾼들을 속일 수는 없었습니다.",
+              "파수꾼 대장은 즉시 봉수대에 마른 쑥과 나무를 올려 하늘 높이 연기와 불꽃을 피워 올렸습니다. 불꽃 신호는 인근 수암봉 봉수대와 마을들로 삽시간에 번져 나갔고, 안산의 군사와 백성들은 순식간에 대비 태세를 갖출 수 있었습니다."
+            ]
+          },
+          {
+            sceneNum: 3,
+            title: '3장: 지혜로 승리한 싸움, 그리고 오늘날의 평화',
+            caption: '조선 백성들의 땀과 넋이 깃든 별망성의 교훈',
+            icon: '🕊️',
+            paragraphs: [
+              "적들이 해안가에 발을 디뎠을 때, 이미 지형을 꿰뚫고 있던 안산의 군사와 백성들은 바위와 갯벌 지형을 활용해 기습을 물리쳤습니다. 지혜와 빠른 소통이 소중한 우리 고장을 구한 것입니다.",
+              "세월이 흘러 한국전쟁 등을 겪으며 성벽이 크게 부서지는 아픔도 겪었지만, 안산 시민들은 조상들의 호국정신을 기리기 위해 무너진 돌을 주워 모아 성을 정성스레 복원했습니다.",
+              "오늘날 별망성은 초지동 공원 속에서 매년 ‘별망성 예술제’가 열리는 평화로운 문화공간으로 탈바꿈하여, 과거의 용기와 지혜를 우리 아이들에게 속삭여주고 있습니다."
+            ]
+          }
+        ],
+        quizzes: [
+          {
+            id: 'q1',
+            question: '‘별망성(別望城)’이라는 이름의 뜻으로 가장 알맞은 것은 무엇인가요?',
+            options: [
+              '별이 밤하늘에서 쏟아지는 아름다운 성',
+              '바다 멀리 적의 동태를 특별히 망보고 경계하던 성',
+              '별자리 점을 치기 위해 천문학자들이 쌓은 천문대',
+              '왕이 별장을 지어 쉬어가던 휴양지'
+            ],
+            answerIndex: 1,
+            explanation: '별망성은 남양만 해안으로 침입하는 왜구를 특별히(別) 망보고(望) 방어하기 위해 쌓은 해안 관측 석축 산성입니다.'
+          },
+          {
+            id: 'q2',
+            question: '별망성의 파수꾼들이 적의 침입을 이웃 고을과 도성에 신속하게 알리기 위해 사용한 통신 수단은 무엇이었나요?',
+            options: [
+              '전화기와 모스 부호',
+              '낮에는 연기, 밤에는 불꽃을 피우는 봉수(烽燧)',
+              '말을 타고 달리는 전령 오토바이',
+              '하늘에 띄운 알록달록 열기구'
+            ],
+            answerIndex: 1,
+            explanation: '전통 사회에서는 산봉우리의 봉수대를 통해 낮에는 연기로, 밤에는 횃불로 급보를 빠르게 전달했습니다.'
+          },
+          {
+            id: 'q3',
+            question: '별망성이 위치한 ‘안산 단원구 초지동’ 앞바다와 갯벌 지형이 군사 방어에 유리했던 이유는 무엇일까요?',
+            options: [
+              '적의 함선이 갯벌에 걸려 움직이기 어렵고, 높은 성곽에서 바다 전체를 훤히 감시할 수 있어서',
+              '바닷물이 너무 뜨거워 배가 녹아내렸기 때문에',
+              '바다에 상어가 많아 적군이 상어를 피해 돌아갔기 때문에',
+              '언제나 짙은 안개만 끼어 있어서 아무것도 보이지 않았기 때문에'
+            ],
+            answerIndex: 0,
+            explanation: '남양만과 시화호 갯벌은 썰물 때 배가 꼼짝없이 갇히게 되며, 해발 49m 언덕 위의 별망성은 수평선 너머 침략선을 한눈에 조망할 수 있는 천혜의 요새였습니다.'
+          },
+          {
+            id: 'q4',
+            question: '안산시에서는 오늘날 호국 선열들의 넋을 기리고 시민들이 참여하는 어떤 대표 문화 예술 행사를 별망성지에서 열고 있나요?',
+            options: [
+              '별망성 예술제',
+              '서해안 로봇 격투 대회',
+              '초지동 우주선 발사 축제',
+              '세계 자동차 경주 대회'
+            ],
+            answerIndex: 0,
+            explanation: '안산시는 매년 가을 별망성지에서 ‘별망성 예술제’를 개최하여 무용, 국악, 연극 등 다양한 문화 공연과 선조들의 호국 정신을 기리고 있습니다.'
+          }
+        ],
+        thinkingMissions: [
+          {
+            id: 't1',
+            type: 'short',
+            label: '📡 의사소통 전략 토론',
+            prompt: '오늘날 디지털 시대에 갑자기 통신망이 끊긴다면, 우리 마을 주민들은 재난이나 위험 상황에서 옛 조상들처럼 어떤 창의적인 방법으로 신호를 주고받을 수 있을까요?',
+            placeholder: '높은 건물의 빛을 활용한 빛 신호나, 규칙적인 종소리 타종 암호 등을 마련해...'
+          },
+          {
+            id: 't2',
+            type: 'creative',
+            label: '🎭 역사 롤플레잉 상상 (창의력)',
+            prompt: '내가 별망성의 어린이 파수꾼이라면, 피를 흘리지 않고 지혜만으로 침략자들을 깜짝 놀라게 해 스스로 물러나게 만들 기발한 ‘위장 작전’이나 속임수 아이디어를 제안해 보세요.',
+            placeholder: '짚으로 수많은 대형 허수아비 군사를 만들어 성벽 위에 세워두고, 큰북을 동시에 울려 대군이 있는 것처럼...'
+          }
+        ],
+        canvasPrompt: '튼튼한 별망성 성벽과 하늘 높이 피어오르는 평화의 봉홧불을 그려보세요!',
+        localInsight: {
+          title: '단원구 초지동 별망성지와 첨단 안산의 조화',
+          history: '별망성지(경기도 기념물)는 해발 49m의 둔덕에 둘레 약 225m 규모로 복원된 삼태기 모양의 석축 진영 터입니다. 조선 해군 기지로서 해안 방어 체계의 생생한 사료입니다.',
+          modern: '현재 초지동은 안산스마트허브 및 쾌적한 주거단지, 호수공원과 인접해 있습니다. 안산시에서는 매년 가을 유서 깊은 ‘별망성 예술제’를 개최하여 산신제와 전통문화 공연을 이어가고 있습니다.',
+          travelTip: '초지동 별망성지에 올라서면 과거 바다였던 시화호 일대와 현대식 산업 단지가 한눈에 내려다보여, 안산의 과거와 현대가 공존하는 독특한 경관을 배울 수 있습니다.'
+        }
+      }
+    };
+
+    /* User Progress and State */
+    let currentVillageKey = 'palgok';
+    let currentSceneIdx = 0;
+    let storyFontSize = 18;
+    let currentTab = 'story';
+    let userAnswers = {
+      palgok: { quizzes: {}, thinkingDone: false },
+      daebudo: { quizzes: {}, thinkingDone: false },
+      byeolmang: { quizzes: {}, thinkingDone: false }
+    };
+    let brushColor = '#0284c7';
+
+    // Canvas drawing variables
+    let canvas, ctx;
+    let isDrawing = false;
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initCanvas();
+      updateMapBadges();
+      // Auto-load state from localStorage if available
+      try {
+        const saved = localStorage.getItem('ansan_folktale_progress_v1');
+        if (saved) {
+          userAnswers = JSON.parse(saved);
+          updateMapBadges();
+        }
+      } catch(e) {}
+    });
+
+    function saveProgress() {
+      try {
+        localStorage.setItem('ansan_folktale_progress_v1', JSON.stringify(userAnswers));
+      } catch(e) {}
+      updateMapBadges();
+    }
+
+    function updateMapBadges() {
+      let completedCount = 0;
+      ['palgok', 'daebudo', 'byeolmang'].forEach(key => {
+        const v = userAnswers[key];
+        const data = VILLAGE_DATA[key];
+        const badgeEl = document.getElementById(`badge-${key}`);
+        const stampBox = document.getElementById(`stampBox-${key}`);
+        const stampIcon = document.getElementById(`stampIcon-${key}`);
+        const stampStatus = document.getElementById(`stampStatus-${key}`);
+
+        const answeredCount = Object.keys(v.quizzes).length;
+        const totalQuizzes = data.quizzes.length;
+        const isComplete = answeredCount === totalQuizzes && v.thinkingDone;
+        if (isComplete) completedCount++;
+
+        if (badgeEl) {
+          if (isComplete) {
+            badgeEl.innerHTML = `<span class="text-emerald-600 font-bold">✨ 탐구 완료!</span>`;
+          } else {
+            badgeEl.innerHTML = `<span class="text-stone-400 font-medium">진행 중 (${answeredCount}/${totalQuizzes} 퀴즈)</span>`;
+          }
+        }
+
+        if (stampBox && stampIcon && stampStatus) {
+          if (isComplete) {
+            stampBox.classList.remove('border-dashed', 'border-stone-300', 'bg-white');
+            stampBox.classList.add('border-solid', 'border-amber-400', 'bg-amber-100');
+            stampIcon.classList.remove('opacity-30');
+            stampIcon.classList.add('opacity-100', 'scale-110');
+            stampStatus.innerText = '완료 도장 쾅!';
+            stampStatus.className = 'text-[10px] text-amber-900 font-bold mt-1';
+          } else {
+            stampBox.className = 'p-3 bg-white rounded-xl border border-dashed border-stone-300 flex flex-col items-center';
+            stampIcon.className = 'text-3xl opacity-30 mb-1';
+            stampStatus.innerText = '미완료';
+            stampStatus.className = 'text-[10px] text-stone-500 mt-1';
+          }
+        }
+      });
+
+      const passportCountBadge = document.getElementById('passportCountBadge');
+      if (passportCountBadge) {
+        passportCountBadge.innerText = `${completedCount}/3 완료`;
+      }
+    }
+
+    function goToHome() {
+      playNote("G4", "16n");
+      document.getElementById('villageDetailView').classList.add('hidden');
+      document.getElementById('villageMapView').classList.remove('hidden');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function enterVillage(villageKey) {
+      currentVillageKey = villageKey;
+      currentSceneIdx = 0;
+      playNote("C5", "16n");
+
+      const data = VILLAGE_DATA[villageKey];
+      document.getElementById('villageTitle').innerText = data.name;
+      document.getElementById('villageSubtitle').innerText = data.subtitle;
+      document.getElementById('villageHeaderIcon').innerText = data.icon;
+      document.getElementById('villageDistrictTag').innerText = data.district;
+
+      document.getElementById('villageMapView').classList.add('hidden');
+      document.getElementById('villageDetailView').classList.remove('hidden');
+
+      // Populate Story
+      renderScene();
+      // Populate Quiz
+      renderQuizzes();
+      // Populate Thinking tasks
+      renderThinkingTasks();
+      // Populate Local insight
+      renderLocalInsight();
+
+      switchTab('story');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderScene() {
+      const data = VILLAGE_DATA[currentVillageKey];
+      const scene = data.scenes[currentSceneIdx];
+
+      document.getElementById('storyIllustrationIcon').innerText = scene.icon;
+      document.getElementById('storySceneTitle').innerText = scene.title;
+      document.getElementById('storySceneCaption').innerText = scene.caption;
+
+      const container = document.getElementById('storyTextContainer');
+      container.innerHTML = '';
+      scene.paragraphs.forEach(p => {
+        const pEl = document.createElement('p');
+        pEl.className = 'text-stone-800 leading-relaxed font-normal';
+        pEl.style.fontSize = `${storyFontSize}px`;
+        pEl.textContent = p;
+        container.appendChild(pEl);
+      });
+
+      document.getElementById('storySceneIndicator').innerText = `${currentSceneIdx + 1} / ${data.scenes.length}`;
+      document.getElementById('prevSceneBtn').disabled = (currentSceneIdx === 0);
+
+      const nextBtn = document.getElementById('nextSceneBtn');
+      if (currentSceneIdx === data.scenes.length - 1) {
+        nextBtn.innerHTML = `퀴즈 풀러 가기 ➔`;
+      } else {
+        nextBtn.innerHTML = `다음 장면 ▶`;
+      }
+    }
+
+    function navigateStoryScene(dir) {
+      const data = VILLAGE_DATA[currentVillageKey];
+      const newIdx = currentSceneIdx + dir;
+      if (newIdx >= 0 && newIdx < data.scenes.length) {
+        playNote("E5", "16n");
+        currentSceneIdx = newIdx;
+        renderScene();
+      } else if (newIdx >= data.scenes.length) {
+        switchTab('quiz');
+      }
+    }
+
+    function changeFontSize(delta) {
+      storyFontSize = Math.max(15, Math.min(26, storyFontSize + delta * 2));
+      const container = document.getElementById('storyTextContainer');
+      Array.from(container.children).forEach(p => {
+        p.style.fontSize = `${storyFontSize}px`;
+      });
+      playNote("C5", "32n");
+    }
+
+    function readAloudScene() {
+      const data = VILLAGE_DATA[currentVillageKey];
+      const scene = data.scenes[currentSceneIdx];
+      const fullText = `${scene.title}. ${scene.paragraphs.join(' ')}`;
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(fullText);
+        utterance.lang = 'ko-KR';
+        utterance.rate = 0.92;
+        utterance.pitch = 1.05;
+        window.speechSynthesis.speak(utterance);
+        showToast("이야기 낭독을 시작합니다 🎧");
+      } else {
+        showToast("이 브라우저에서는 음성 낭독 기능을 지원하지 않습니다.");
+      }
+    }
+
+    function switchTab(tabName) {
+      currentTab = tabName;
+      playNote("D5", "16n");
+
+      // Hide all panels
+      ['story', 'quiz', 'thinking', 'local'].forEach(t => {
+        const panel = document.getElementById(`panel-${t}`);
+        const btn = document.getElementById(`tab-${t}`);
+        if (panel) panel.classList.add('hidden');
+        if (btn) {
+          btn.className = "tab-btn flex-1 md:flex-none px-3.5 py-2 rounded-xl text-xs font-bold transition-all text-stone-600 hover:text-stone-900";
+        }
+      });
+
+      // Show selected panel
+      const activePanel = document.getElementById(`panel-${tabName}`);
+      const activeBtn = document.getElementById(`tab-${tabName}`);
+      if (activePanel) activePanel.classList.remove('hidden');
+      if (activeBtn) {
+        activeBtn.className = "tab-btn flex-1 md:flex-none px-3.5 py-2 rounded-xl text-xs font-bold transition-all bg-white text-stone-900 shadow-sm border border-stone-200";
+      }
+
+      if (tabName === 'thinking') {
+        setTimeout(resizeCanvas, 50);
+      }
+    }
+
+    function renderQuizzes() {
+      const data = VILLAGE_DATA[currentVillageKey];
+      const container = document.getElementById('quizQuestionsList');
+      container.innerHTML = '';
+
+      let correctCount = 0;
+      let answeredCount = 0;
+
+      data.quizzes.forEach((q, qIndex) => {
+        const savedAnswer = userAnswers[currentVillageKey].quizzes[q.id];
+        const isAnswered = (savedAnswer !== undefined);
+        const isCorrect = (savedAnswer === q.answerIndex);
+
+        if (isAnswered) {
+          answeredCount++;
+          if (isCorrect) correctCount++;
+        }
+
+        const card = document.createElement('div');
+        card.className = "p-5 rounded-2xl border-2 border-stone-200 bg-stone-50/70 space-y-3 transition-all";
+
+        // Quiz Question Title and single reset button
+        const qHeader = document.createElement('div');
+        qHeader.className = "flex items-start justify-between gap-3";
+        qHeader.innerHTML = `
+          <div class="font-bold text-sm md:text-base text-stone-900 flex items-start gap-2">
+            <span class="bg-amber-400 text-amber-950 px-2.5 py-0.5 rounded-md text-xs font-black shrink-0">Q${qIndex + 1}</span> 
+            <span>${q.question}</span>
+          </div>
+          ${isAnswered ? `
+            <button onclick="resetSingleQuiz('${q.id}')" class="shrink-0 px-2.5 py-1 text-[11px] font-bold text-stone-600 bg-stone-200/80 hover:bg-stone-300 rounded-lg transition-colors flex items-center gap-1" title="이 문제 다시 풀기">
+              <span>↺</span> <span>다시 풀기</span>
+            </button>
+          ` : ''}
+        `;
+        card.appendChild(qHeader);
+
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = "grid grid-cols-1 gap-2 pt-1";
+
+        q.options.forEach((opt, optIndex) => {
+          const optBtn = document.createElement('button');
+          optBtn.className = "text-left p-3 rounded-xl border text-xs md:text-sm font-medium transition-all flex items-center justify-between ";
+
+          const isSelected = (savedAnswer === optIndex);
+
+          if (isCorrect) {
+            // 정답을 맞힌 경우: 정답 보기 하이라이트 및 다른 보기는 비활성화 처리
+            if (isSelected) {
+              optBtn.className += " bg-emerald-100 border-emerald-500 text-emerald-950 font-bold shadow-sm ring-2 ring-emerald-400/50";
+              optBtn.innerHTML = `<span>${opt}</span> <span class="bg-emerald-600 text-white text-xs px-2 py-0.5 rounded-full font-bold">✅ 정답!</span>`;
+            } else {
+              optBtn.className += " bg-white/70 border-stone-200 opacity-60";
+              optBtn.innerText = opt;
+            }
+            optBtn.disabled = true;
+          } else if (isAnswered && !isCorrect) {
+            // 오답을 선택한 경우: 선택한 오답만 오답 표시하고, 정답은 노출하지 않은 채 다른 보기를 계속 고를 수 있도록 허용
+            if (isSelected) {
+              optBtn.className += " bg-rose-100 border-rose-400 text-rose-950 font-medium";
+              optBtn.innerHTML = `<span>${opt}</span> <span class="bg-rose-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">❌ 다시 생각해 보세요!</span>`;
+            } else {
+              optBtn.className += " bg-white border-stone-200 hover:border-amber-400 hover:bg-amber-50/70 text-stone-800 shadow-sm bubble-btn";
+              optBtn.innerText = opt;
+            }
+            optBtn.onclick = () => handleAnswerQuiz(q.id, optIndex, q.answerIndex);
+          } else {
+            // 아직 답을 선택하지 않은 초기 상태
+            optBtn.className += " bg-white border-stone-200 hover:border-amber-400 hover:bg-amber-50/70 text-stone-800 shadow-sm bubble-btn";
+            optBtn.innerText = opt;
+            optBtn.onclick = () => handleAnswerQuiz(q.id, optIndex, q.answerIndex);
+          }
+
+          optionsContainer.appendChild(optBtn);
+        });
+
+        card.appendChild(optionsContainer);
+
+        // 정답을 맞힌 경우에만 학습 해설 및 배움 박스 표시
+        if (isCorrect) {
+          const expBox = document.createElement('div');
+          expBox.className = "text-xs bg-amber-50/90 p-3 rounded-xl border border-amber-200 text-amber-900 leading-relaxed";
+          expBox.innerHTML = `💡 <strong>해설 및 배움:</strong> ${q.explanation}`;
+          card.appendChild(expBox);
+        } else if (isAnswered && !isCorrect) {
+          const hintBox = document.createElement('div');
+          hintBox.className = "text-xs bg-rose-50 p-2.5 rounded-xl border border-rose-200 text-rose-800 flex items-center gap-1.5";
+          hintBox.innerHTML = `<span>🤔</span> <span>아쉬워요! 다른 보기를 선택하여 정답을 찾아보세요.</span>`;
+          card.appendChild(hintBox);
+        }
+
+        container.appendChild(card);
+      });
+
+      const scoreBadge = document.getElementById('quizScoreBadge');
+      scoreBadge.innerText = `정답 ${correctCount} / ${data.quizzes.length}`;
+
+      const banner = document.getElementById('quizCompletionBanner');
+      if (correctCount === data.quizzes.length) {
+        banner.classList.remove('hidden');
+      } else {
+        banner.classList.add('hidden');
+      }
+    }
+
+    function handleAnswerQuiz(quizId, chosenIdx, correctIdx) {
+      userAnswers[currentVillageKey].quizzes[quizId] = chosenIdx;
+      saveProgress();
+
+      if (chosenIdx === correctIdx) {
+        playSuccessChime();
+        fireConfetti({ particleCount: 30, spread: 60, origin: { y: 0.7 } });
+        showToast("딩동댕! 정답입니다! 🎉");
+      } else {
+        playNote("C3", "8n");
+        showToast("오답입니다. 다른 보기를 선택하여 다시 도전해 보세요! 💪");
+      }
+
+      renderQuizzes();
+    }
+
+    /* Reset a single quiz */
+    function resetSingleQuiz(quizId) {
+      if (userAnswers[currentVillageKey] && userAnswers[currentVillageKey].quizzes) {
+        delete userAnswers[currentVillageKey].quizzes[quizId];
+        saveProgress();
+        playNote("E4", "16n");
+        renderQuizzes();
+        showToast("해당 문제를 다시 풀 수 있도록 초기화했습니다.");
+      }
+    }
+
+    /* Reset all quizzes in the current village */
+    function resetCurrentVillageQuizzes() {
+      if (userAnswers[currentVillageKey]) {
+        userAnswers[currentVillageKey].quizzes = {};
+        saveProgress();
+        playNote("C4", "8n");
+        renderQuizzes();
+        showToast("마을의 모든 퀴즈가 초기화되었습니다. 다시 도전해 보세요! 🎯");
+      }
+    }
+
+    function renderThinkingTasks() {
+      const data = VILLAGE_DATA[currentVillageKey];
+      const container = document.getElementById('thinkingTasksContainer');
+      container.innerHTML = '';
+
+      document.getElementById('canvasTaskTitle').innerText = data.canvasPrompt;
+
+      data.thinkingMissions.forEach((m, idx) => {
+        const box = document.createElement('div');
+        box.className = "p-5 rounded-2xl bg-indigo-50/40 border border-indigo-200 space-y-3";
+
+        box.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-indigo-900 bg-indigo-100 px-2.5 py-0.5 rounded-md">${m.label}</span>
+            <span class="text-xs text-stone-500 font-medium">미션 ${idx + 1}</span>
+          </div>
+          <p class="text-xs md:text-sm font-bold text-stone-900 leading-relaxed">${m.prompt}</p>
+          <textarea id="thinking_input_${m.id}" rows="3" class="w-full p-3 text-xs md:text-sm rounded-xl border border-stone-300 focus:outline-none focus:ring-2 focus:ring-indigo-400 bg-white" placeholder="${m.placeholder}"></textarea>
+        `;
+        container.appendChild(box);
+      });
+    }
+
+    function submitThinkingMission() {
+      const data = VILLAGE_DATA[currentVillageKey];
+      let filled = false;
+
+      data.thinkingMissions.forEach(m => {
+        const el = document.getElementById(`thinking_input_${m.id}`);
+        if (el && el.value.trim().length > 4) {
+          filled = true;
+        }
+      });
+
+      if (!filled) {
+        showToast("생각을 조금 더 적어주세요! (최소 한 줄 이상 작성) ✍️");
+        playNote("G3", "8n");
+        return;
+      }
+
+      userAnswers[currentVillageKey].thinkingDone = true;
+      saveProgress();
+      playSuccessChime();
+      fireConfetti({ particleCount: 70, spread: 80, origin: { y: 0.6 } });
+      showToast("와우! 창의 탐구 도장을 획득했습니다! 🎖️");
+
+      setTimeout(() => {
+        openPassportModal();
+      }, 1000);
+    }
+
+    function renderLocalInsight() {
+      const data = VILLAGE_DATA[currentVillageKey];
+      document.getElementById('localInfoTitle').innerText = `${data.district} & ${data.name} 지리·역사 돋보기`;
+
+      const container = document.getElementById('localInsightContent');
+      container.innerHTML = `
+        <div class="p-5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2">
+          <div class="text-amber-900 font-bold text-sm flex items-center gap-1.5">
+            <span>📜</span> <span>역사적 배경과 유래</span>
+          </div>
+          <p class="text-xs md:text-sm text-stone-700 leading-relaxed">${data.localInsight.history}</p>
+        </div>
+
+        <div class="p-5 rounded-2xl bg-sky-50/70 border border-sky-200 space-y-2">
+          <div class="text-sky-900 font-bold text-sm flex items-center gap-1.5">
+            <span>🏙️</span> <span>오늘날 안산시의 모습</span>
+          </div>
+          <p class="text-xs md:text-sm text-stone-700 leading-relaxed">${data.localInsight.modern}</p>
+        </div>
+      `;
+
+      document.getElementById('localTravelTip').innerText = data.localInsight.travelTip;
+    }
+
+    function initCanvas() {
+      canvas = document.getElementById('creativeCanvas');
+      if (!canvas) return;
+      ctx = canvas.getContext('2d');
+
+      const resize = () => {
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = brushColor;
+      };
+      resize();
+      window.addEventListener('resize', resize);
+
+      const getPos = (e) => {
+        const rect = canvas.getBoundingClientRect();
+        if (e.touches && e.touches[0]) {
+          return {
+            x: e.touches[0].clientX - rect.left,
+            y: e.touches[0].clientY - rect.top
+          };
+        }
+        return {
+          x: e.clientX - rect.left,
+          y: e.clientY - rect.top
+        };
+      };
+
+      const startDrawing = (e) => {
+        isDrawing = true;
+        const placeholder = document.getElementById('canvasPlaceholder');
+        if (placeholder) placeholder.style.display = 'none';
+        const pos = getPos(e);
+        ctx.beginPath();
+        ctx.moveTo(pos.x, pos.y);
+      };
+
+      const draw = (e) => {
+        if (!isDrawing) return;
+        e.preventDefault();
+        const pos = getPos(e);
+        ctx.strokeStyle = brushColor;
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+      };
+
+      const stopDrawing = () => {
+        isDrawing = false;
+      };
+
+      canvas.addEventListener('mousedown', startDrawing);
+      canvas.addEventListener('mousemove', draw);
+      window.addEventListener('mouseup', stopDrawing);
+
+      canvas.addEventListener('touchstart', startDrawing, { passive: false });
+      canvas.addEventListener('touchmove', draw, { passive: false });
+      window.addEventListener('touchend', stopDrawing);
+    }
+
+    function resizeCanvas() {
+      if (!canvas || !ctx) return;
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width > 0 && (canvas.width !== rect.width || canvas.height !== rect.height)) {
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = brushColor;
+      }
+    }
+
+    function setBrushColor(color) {
+      brushColor = color;
+      if (ctx) ctx.strokeStyle = brushColor;
+      playNote("A4", "32n");
+    }
+
+    function clearCreativeCanvas() {
+      if (!ctx || !canvas) return;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      const placeholder = document.getElementById('canvasPlaceholder');
+      if (placeholder) placeholder.style.display = 'flex';
+      playNote("C4", "16n");
+    }
+
+    function openPassportModal() {
+      playNote("F5", "16n");
+      updateMapBadges();
+      document.getElementById('passportModal').classList.remove('hidden');
+    }
+
+    function closePassportModal() {
+      playNote("D4", "16n");
+      document.getElementById('passportModal').classList.add('hidden');
+    }
+
+    function showQuickAnsanGuide() {
+      playNote("E5", "16n");
+      document.getElementById('quickGuideModal').classList.remove('hidden');
+    }
+
+    function closeQuickGuideModal() {
+      playNote("C4", "16n");
+      document.getElementById('quickGuideModal').classList.add('hidden');
+    }
+
+    let toastTimer = null;
+    function showToast(msg, icon = '✨') {
+      const toast = document.getElementById('messageToast');
+      document.getElementById('toastIcon').innerText = icon;
+      document.getElementById('toastMessage').innerText = msg;
+
+      toast.classList.remove('opacity-0', 'translate-y-4', 'pointer-events-none');
+      toast.classList.add('opacity-100', 'translate-y-0');
+
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
+        toast.classList.remove('opacity-100', 'translate-y-0');
+        toast.classList.add('opacity-0', 'translate-y-4', 'pointer-events-none');
+      }, 3000);
+    }
+
+    function shareVillageReport() {
+      const data = VILLAGE_DATA[currentVillageKey];
+      const summaryText = `[안산 설화 탐험 마을 학습 기록]\n- 마을: ${data.name} (${data.district})\n- 설화 주제: ${data.storyTitle}\n- 역사 요약: ${data.localInsight.history}\n- 우리 고장 안산 탐구 팁: ${data.localInsight.travelTip}`;
+
+      // Clipboard safe fallback
+      const tempInput = document.createElement('textarea');
+      tempInput.value = summaryText;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+
+      playSuccessChime();
+      showToast("마을 탐구 요약 내용이 클립보드에 복사되었습니다! 📋");
+    }
+
+    function generatePrintableSummary() {
+      const summaryText = `[안산 어린이 설화 탐구 완주 보고서]\n1. 상록구 팔곡동 큰 우물 마을 (이무기 전설)\n2. 단원구 대부도 구봉도 선돌 마을 (할미·할아비 바위 전설)\n3. 단원구 초지동 별망성 보루 마을 (파수꾼과 호국 전설)\n\n"안산의 옛이야기를 통해 우리 고장의 자연과 사람, 역사를 사랑하는 마음을 길렀습니다!"`;
+
+      const tempInput = document.createElement('textarea');
+      tempInput.value = summaryText;
+      document.body.appendChild(tempInput);
+      tempInput.select();
+      document.execCommand('copy');
+      document.body.removeChild(tempInput);
+
+      playSuccessChime();
+      showToast("탐험 기록 보고서가 복사되었습니다. 과제나 일지에 붙여넣으세요! 📜");
+    }
+  </script>
+</body>
+</html>
